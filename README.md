@@ -13,13 +13,15 @@
 - Лимиты по вместимости.
 
 ## 🚀 Установка
+
 ```
 
 git clone https://github.com/oldruby85-doggo/pileofsillythingys.git
-cd forbidden-castle
+cd pileofsillythingys
 python -m venv .venv
-.venv\Scripts\activate    # Windows
+.venv\Scripts\activate
 pip install -r req.txt
+
 ```
 
 ## 📄 requirements
