@@ -22,10 +22,14 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-## 📄 requirements.txt
+## 📄 requirements
 ```
-PyQt5>=5.15.0
-openpyxl>=3.1.0
+et_xmlfile==2.0.0
+openpyxl==3.1.5
+PyQt5==5.15.10
+PyQt5-Qt5==5.15.2
+PyQt5_sip==12.17.0
+
 ```
 
 ## ▶️ Запуск
