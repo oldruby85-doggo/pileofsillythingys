@@ -1,0 +1,10 @@
+[project]
+name = "forbidden-castle"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = [
+  "PyQt5>=5.15.9",
+  "openpyxl>=3.1.2"
+]
+
+[tool.pip]  # просто для наглядности, можно не трогать
