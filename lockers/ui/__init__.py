@@ -1,6 +1,6 @@
-# lockers/ui/__init__.py
 from .items import LockerItem
 from .scene import LockerScene
-from .main_window import LockerView, LockerApp
+from .view import LockerView
+from .main_window import LockerApp
 
 __all__ = ["LockerItem", "LockerScene", "LockerView", "LockerApp"]
