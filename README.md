@@ -15,7 +15,7 @@
 ## 🚀 Установка
 ```
 
-git clone https://github.com/pileofsillythingys/forbidden-castle.git
+git clone https://github.com/oldruby85-doggo/pileofsillythingys.git
 cd forbidden-castle
 python -m venv .venv
 .venv\Scripts\activate    # Windows
