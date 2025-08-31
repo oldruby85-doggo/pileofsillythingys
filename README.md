@@ -14,7 +14,7 @@
 
 ## 🚀 Установка
 ```
-bash
+
 git clone https://github.com/pileofsillythingys/forbidden-castle.git
 cd forbidden-castle
 python -m venv .venv
