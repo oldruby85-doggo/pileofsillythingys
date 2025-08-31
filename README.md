@@ -19,7 +19,7 @@ git clone https://github.com/pileofsillythingys/forbidden-castle.git
 cd forbidden-castle
 python -m venv .venv
 .venv\Scripts\activate    # Windows
-pip install -r requirements.txt
+pip install -r req.txt
 ```
 
 ## 📄 requirements
