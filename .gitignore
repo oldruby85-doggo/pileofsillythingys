@@ -7,3 +7,8 @@ __pycache__/
 dist/
 build/
 *.bak
+desktop.ini
+Thumbs.db
+*.tmp
+*.bak
+.tmp.driveupload/
