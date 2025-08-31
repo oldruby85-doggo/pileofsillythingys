@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
 )
 
 from lockers.ui.items import LockerItem
-from lockers.core.storage import get_asset
+from lockers.core.storage.assets import get_asset
 
 
 class LockerScene(QGraphicsScene):

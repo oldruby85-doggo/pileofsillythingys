@@ -12,10 +12,11 @@ from PyQt5.QtWidgets import (
 from lockers.ui.scene import LockerScene
 from lockers.ui.items import LockerItem
 from lockers.core.state import AppState
-from lockers.core.storage import (
-    get_asset, load_layout as load_json_layout, save_layout as save_json_layout,
-    export_txt as export_txt_file, export_xlsx as export_xlsx_file
-)
+from lockers.core.storage.assets import get_asset
+from lockers.core.storage.json_store import load_layout as load_json_layout, save_layout as save_json_layout
+from lockers.core.storage.export_txt import export_txt as export_txt_file
+from lockers.core.storage.export_xlsx import export_xlsx as export_xlsx_file
+
 from lockers.utils.paths import autosave_path
 
 

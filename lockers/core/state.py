@@ -1,57 +1,117 @@
+# lockers/core/state.py
+"""
+Простая бизнес-логика приложения:
+- учёт вместимости (capacity)
+- подсчёт занятых локеров
+- проверка возможности добавить ещё одного владельца
+- проверка дубликатов номеров
+- поиск следующего свободного номера
+"""
+
 from __future__ import annotations
-from typing import Callable, Iterable, Optional
-from .models import LockerSnapshot
+from typing import Callable, Iterable, Optional, Any
+
+
+class _LockerProto:
+    """Мини-«протокол», чтобы mypy не плакал и было понятно, что мы ждём от locker-объекта."""
+    number: Optional[int]
+    owner: str
+
 
 class AppState:
-    """Простое состояние без Qt-сигналов. Читает локеры через провайдер."""
-
-    def __init__(self, capacity: int = 100,
-                 lockers_provider: Optional[Callable[[], Iterable[object]]] = None):
-        self.capacity = capacity
-        # провайдер отдаёт объекты с атрибутами number/owner/invno/pos()
-        self._provider = lockers_provider or (lambda: ())
-
-    # ------ чтение текущего набора локеров ------
-    def _snapshots(self) -> list[LockerSnapshot]:
-        snaps: list[LockerSnapshot] = []
-        for it in self._provider():
+    def __init__(self, capacity: Optional[int], lockers_provider: Callable[[], Iterable[_LockerProto]]):
+        """
+        :param capacity: максимум владельцев, None = безлимит
+        :param lockers_provider: функция без аргументов, возвращающая итерируемую коллекцию локеров.
+                                 Каждый локер обязан иметь поля .number (int|None) и .owner (str).
+        """
+        if capacity is not None:
             try:
-                snaps.append(
-                    LockerSnapshot(
-                        number=getattr(it, "number", None),
-                        owner=getattr(it, "owner", "") or "",
-                        invno=str(getattr(it, "invno", "") or ""),
-                        x=float(it.pos().x()),
-                        y=float(it.pos().y()),
-                    )
-                )
+                capacity = int(capacity)
+                assert capacity >= 0
             except Exception:
-                continue
-        return snaps
+                raise ValueError("capacity должен быть неотрицательным целым или None")
+        self.capacity: Optional[int] = capacity
+        self._lockers_provider = lockers_provider
 
-    # ------ бизнес-логика ------
+    # ---------------- occupancy ----------------
     def occupied_count(self) -> int:
-        return sum(1 for s in self._snapshots() if s.owner)
+        """Количество локеров с непустым владельцем."""
+        cnt = 0
+        for it in self._iter_lockers_safely():
+            if getattr(it, "owner", "").strip():
+                cnt += 1
+        return cnt
 
-    def number_exists(self, num: int, exclude_obj: object | None = None) -> bool:
-        for it in self._provider():
+    def can_add_one_owner(self) -> bool:
+        """Можно ли добавить ещё одного НЕпустого владельца с учётом вместимости."""
+        if self.capacity is None:
+            return True
+        return self.occupied_count() < int(self.capacity)
+
+    def can_assign_owner(self, old_owner: str, new_owner: str) -> bool:
+        """
+        Проверка «можно ли присвоить владельца»:
+        - если new_owner пустой → всегда можно (снятие владельца).
+        - если old пустой, new непустой → нужна свободная вместимость.
+        - если old и new непустые (замена строки владельца) → ок, занятость не меняется.
+        """
+        new_owner = (new_owner or "").strip()
+        old_owner = (old_owner or "").strip()
+        if not new_owner:
+            return True
+        if not old_owner and new_owner:
+            # было пусто → станет занято: потребуется одно место
+            return self.can_add_one_owner()
+        # было занято → останется занято: лимит не меняется
+        return True
+
+    # ---------------- numbering ----------------
+    def number_exists(self, number: int, *, exclude_obj: Optional[Any] = None) -> bool:
+        """Проверяет, занят ли номер (игнорирует None, можно исключить конкретный объект)."""
+        try:
+            number = int(number)
+        except Exception:
+            return False
+        for it in self._iter_lockers_safely():
             if exclude_obj is not None and it is exclude_obj:
                 continue
-            if getattr(it, "number", None) == num:
-                return True
+            num = getattr(it, "number", None)
+            if num is None:
+                continue
+            try:
+                if int(num) == number:
+                    return True
+            except Exception:
+                continue
         return False
 
-    def next_free_number(self) -> int:
-        used = {getattr(it, "number") for it in self._provider() if getattr(it, "number") is not None}
-        n = 1
+    def next_free_number(self, start_from: int = 1) -> int:
+        """Возвращает следующий свободный НЕотрицательный номер, начиная с start_from."""
+        if start_from < 0:
+            start_from = 0
+        used = set()
+        for it in self._iter_lockers_safely():
+            num = getattr(it, "number", None)
+            if num is None:
+                continue
+            try:
+                used.add(int(num))
+            except Exception:
+                continue
+        n = start_from
         while n in used:
             n += 1
         return n
 
-    def can_add_one_owner(self) -> bool:
-        if self.capacity is None:
-            return True
-        return self.occupied_count() < self.capacity
-
-    def can_assign_owner(self, old_owner: str, new_owner: str) -> bool:
-        return bool(old_owner) or not bool(new_owner.strip()) or self.can_add_one_owner()
+    # ---------------- internals ----------------
+    def _iter_lockers_safely(self) -> Iterable[_LockerProto]:
+        """Безопасный итератор: защищаемся от странностей провайдера."""
+        try:
+            for it in self._lockers_provider():
+                # минимальная sanity-проверка
+                if hasattr(it, "number") and hasattr(it, "owner"):
+                    yield it
+        except RuntimeError:
+            # Qt иногда кидает во время мутаций коллекции; просто прекращаем итерацию
+            return
